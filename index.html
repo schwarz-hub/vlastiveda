@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slepá mapa Slovenska – Vlastiveda 4. ročník</title>
+  <meta name="description" content="Interaktívna vzdelávacia hra pre 4. ročník ZŠ zameraná na pohoria, nížiny, rieky a krajské mestá Slovenska." />
+  <meta property="og:title" content="Slepá mapa Slovenska – Vlastiveda 4. ročník" />
+  <meta property="og:description" content="Interaktívna slepá mapa Slovenska pre štvrtákov: mestá, rieky, pohoria a nížina." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Caveat:wght@600&family=Nunito:wght@600;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #FFF6EC;
+      --pink: #FFC8DD;
+      --blue: #BDE0FE;
+      --mint: #B9FBC0;
+      --yellow: #FFF1A8;
+      --lilac: #D7C6F5;
+      --peach: #FFD6A5;
+      --text: #4A4458;
+
+      --surface: #FFFFFF;
+      --muted: #766E85;
+      --border: rgba(74, 68, 88, 0.12);
+      --shadow-soft: 0 14px 36px rgba(74, 68, 88, 0.08);
+      --shadow-card: 0 10px 26px rgba(74, 68, 88, 0.07);
+
+      --mint-deep: #2C7A4B;
+      --mint-stroke: #4CA970;
+      --pink-deep: #944360;
+      --pink-stroke: #DF88A8;
+      --blue-deep: #2D6F9E;
+      --blue-river: #74BDF7;
+      --blue-river-hover: #4CA4EC;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #F4E9DC;
+      color: var(--text);
+      font-family: 'Nunito', sans-serif;
+      font-weight: 600;
+      user-select: none;
+    }
+
+    #viewport {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #stage {
+      position: relative;
+      width: 1890px;
+      height: 1063px;
+      flex-shrink: 0;
+      transform-origin: center center;
+      background:
+        radial-gradient(circle at 10% 12%, rgba(255, 241, 168, 0.45) 0%, transparent 32%),
+        radial-gradient(circle at 90% 16%, rgba(189, 224, 254, 0.45) 0%, transparent 34%),
+        radial-gradient(circle at 86% 88%, rgba(215, 198, 245, 0.35) 0%, transparent 34%),
+        radial-gradient(circle at 12% 88%, rgba(185, 251, 192, 0.32) 0%, transparent 30%),
+        var(--bg);
+      border-radius: 32px;
+      box-shadow: 0 24px 70px rgba(74, 68, 88, 0.14);
+      overflow: hidden;
+    }
+
+    h1, h2, h3, .font-heading {
+      font-family: 'Baloo 2', sans-serif;
+      font-weight: 700;
+      line-height: 1.15;
+    }
+
+    button {
+      font-family: 'Nunito', sans-serif;
+      color: var(--text);
+      border: none;
+      cursor: pointer;
+      transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1), background-color 160ms ease, opacity 160ms ease;
+    }
+
+    button:focus-visible {
+      outline: 4px solid #6E9CD2;
+      outline-offset: 4px;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-3px);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(1px) scale(0.985);
+    }
+
+    /* Mute Button (Top-Right) */
+    #mute-btn {
+      position: absolute;
+      top: 28px;
+      right: 32px;
+      z-index: 40;
+      width: 84px;
+      height: 84px;
+      border-radius: 26px;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      box-shadow: var(--shadow-card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 38px;
+    }
+
+    #mute-btn[aria-pressed="true"] {
+      background: #F6EEF4;
+    }
+
+    /* Signature Mark (Bottom-Right) */
+    .signature-badge {
+      position: absolute;
+      right: 28px;
+      bottom: 20px;
+      z-index: 40;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 14px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(74, 68, 88, 0.1);
+      color: rgba(74, 68, 88, 0.72);
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      font-style: italic;
+      letter-spacing: 0.02em;
+      pointer-events: none;
+    }
+
+    .signature-badge svg {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+    }
+
+    /* Screens */
+    .screen {
+      position: absolute;
+      inset: 0;
+      padding: 32px 44px;
+      display: none;
+      flex-direction: column;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    /* ---------------- START SCREEN ---------------- */
+    #screen-start {
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+    }
+
+    .start-card {
+      width: 1380px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 2px solid rgba(74, 68, 88, 0.09);
+      border-radius: 40px;
+      box-shadow: var(--shadow-soft);
+      padding: 56px 64px;
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 52px;
+      align-items: center;
+    }
+
+    .start-meta {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--muted);
+      margin-bottom: 12px;
+      letter-spacing: 0.01em;
+    }
+
+    .start-title {
+      font-size: 72px;
+      color: var(--text);
+      margin-bottom: 22px;
+    }
+
+    .start-desc {
+      font-size: 27px;
+      line-height: 1.45;
+      color: var(--text);
+      margin-bottom: 34px;
+    }
+
+    .legend-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .legend-item {
+      background: var(--bg);
+      border-radius: 24px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 21px;
+      font-weight: 800;
+    }
+
+    .legend-swatch {
+      width: 36px;
+      height: 36px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      min-width: 280px;
+      min-height: 88px;
+      padding: 0 46px;
+      border-radius: 28px;
+      background: var(--mint);
+      border: 3px solid var(--mint-stroke);
+      box-shadow: 0 10px 24px rgba(76, 169, 112, 0.22);
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #A9F7B2;
+      box-shadow: 0 14px 30px rgba(76, 169, 112, 0.3);
+    }
+
+    .start-preview {
+      background: var(--bg);
+      border-radius: 32px;
+      padding: 28px;
+      border: 2px solid rgba(74, 68, 88, 0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .start-preview-caption {
+      font-size: 21px;
+      font-weight: 800;
+      color: var(--muted);
+    }
+
+    /* ---------------- GAMEPLAY SCREEN ---------------- */
+    #screen-game {
+      padding: 26px 40px 26px 40px;
+      gap: 18px;
+    }
+
+    .game-hud {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding-right: 108px; /* Space for mute button */
+      min-height: 112px;
+    }
+
+    .prompt-panel {
+      flex: 1;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 28px;
+      box-shadow: var(--shadow-card);
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      min-height: 106px;
+    }
+
+    .prompt-text-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .prompt-kicker {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--muted);
+    }
+
+    .prompt-main {
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 38px;
+      line-height: 1.15;
+      color: var(--text);
+    }
+
+    .category-hint-icon {
+      width: 68px;
+      height: 68px;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      flex-shrink: 0;
+      background: var(--yellow);
+    }
+
+    .status-panel {
+      width: 390px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 28px;
+      box-shadow: var(--shadow-card);
+      padding: 18px 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 10px;
+      min-height: 106px;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      font-size: 23px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .score-value {
+      color: var(--mint-deep);
+      font-size: 26px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 16px;
+      border-radius: 24px;
+      background: #EFE7DE;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 10%;
+      border-radius: 24px;
+      background: linear-gradient(90deg, var(--blue) 0%, var(--mint) 100%);
+      transition: width 240ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Map Container */
+    .map-card {
+      position: relative;
+      flex: 1;
+      background: rgba(255, 255, 255, 0.88);
+      border: 2px solid var(--border);
+      border-radius: 34px;
+      box-shadow: var(--shadow-soft);
+      padding: 16px 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #slovakia-map {
+      width: 100%;
+      height: 100%;
+      max-height: 720px;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    /* SVG Map Styles */
+    .map-border {
+      fill: #FFFDF8;
+      stroke: #A79FB8;
+      stroke-width: 4.5;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+    }
+
+    .map-border-shadow {
+      fill: rgba(189, 224, 254, 0.25);
+      stroke: none;
+    }
+
+    .zone-secondary {
+      fill: #F3F2E8;
+      stroke: rgba(167, 159, 184, 0.32);
+      stroke-width: 1.8;
+    }
+
+    .zone-target {
+      transition: fill 200ms ease, stroke 200ms ease, opacity 200ms ease;
+      cursor: pointer;
+    }
+
+    .zone-lowland {
+      fill: #E8F6C8;
+      stroke: #C2DC8E;
+      stroke-width: 2.5;
+      stroke-dasharray: 8 6;
+    }
+
+    .zone-lowland:hover {
+      fill: #DDF2B1;
+    }
+
+    .zone-high-tatras {
+      fill: #E3D7FA;
+      stroke: #B79FE6;
+      stroke-width: 2.5;
+    }
+
+    .zone-high-tatras:hover {
+      fill: #D5C4F7;
+    }
+
+    .zone-low-tatras {
+      fill: #FFE4C4;
+      stroke: #E9BA82;
+      stroke-width: 2.5;
+    }
+
+    .zone-low-tatras:hover {
+      fill: #FFD8AA;
+    }
+
+    .mountain-peak {
+      fill: #FFFFFF;
+      stroke: rgba(74, 68, 88, 0.35);
+      stroke-width: 1.5;
+      stroke-linejoin: round;
+      pointer-events: none;
+    }
+
+    .river-secondary {
+      fill: none;
+      stroke: #BCE0FB;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      pointer-events: none;
+    }
+
+    .river-line {
+      fill: none;
+      stroke: var(--blue-river);
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: stroke 180ms ease, stroke-width 180ms ease;
+    }
+
+    .river-hit {
+      fill: none;
+      stroke: transparent;
+      stroke-width: 34;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      cursor: pointer;
+    }
+
+    .river-group:hover .river-line {
+      stroke: var(--blue-river-hover);
+      stroke-width: 10.5;
+    }
+
+    .city-dot {
+      fill: #FFFFFF;
+      stroke: var(--text);
+      stroke-width: 3.5;
+      transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), fill 180ms ease, stroke 180ms ease;
+      transform-box: fill-box;
+      transform-origin: center;
+      cursor: pointer;
+    }
+
+    .city-hit {
+      fill: transparent;
+      cursor: pointer;
+    }
+
+    .city-group:hover .city-dot {
+      transform: scale(1.25);
+      fill: var(--yellow);
+    }
+
+    /* Active State Highlights on Map */
+    .is-correct-zone {
+      fill: var(--mint) !important;
+      stroke: var(--mint-stroke) !important;
+      stroke-width: 4 !important;
+      stroke-dasharray: none !important;
+    }
+
+    .is-correct-river .river-line {
+      stroke: var(--mint-stroke) !important;
+      stroke-width: 12 !important;
+    }
+
+    .is-correct-city .city-dot {
+      fill: var(--mint) !important;
+      stroke: var(--mint-deep) !important;
+      stroke-width: 4.5 !important;
+      transform: scale(1.38);
+    }
+
+    .is-reveal-zone {
+      fill: var(--peach) !important;
+      stroke: #DF88A8 !important;
+      stroke-width: 4 !important;
+      stroke-dasharray: none !important;
+    }
+
+    .is-reveal-river .river-line {
+      stroke: #E47EA4 !important;
+      stroke-width: 12 !important;
+    }
+
+    .is-reveal-city .city-dot {
+      fill: var(--peach) !important;
+      stroke: var(--pink-deep) !important;
+      stroke-width: 4.5 !important;
+      transform: scale(1.38);
+    }
+
+    .is-found-city .city-dot {
+      fill: #D5FDE0;
+      stroke: var(--mint-stroke);
+    }
+
+    .connector-line {
+      fill: none;
+      stroke: var(--pink-deep);
+      stroke-width: 4;
+      stroke-dasharray: 10 8;
+      stroke-linecap: round;
+      pointer-events: none;
+    }
+
+    .click-marker-wrong {
+      fill: var(--pink);
+      stroke: var(--pink-deep);
+      stroke-width: 3.5;
+      pointer-events: none;
+    }
+
+    .click-marker-correct {
+      fill: var(--mint);
+      stroke: var(--mint-deep);
+      stroke-width: 3.5;
+      pointer-events: none;
+    }
+
+    .pulse-ring {
+      fill: none;
+      stroke: var(--pink-deep);
+      stroke-width: 4.5;
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: ringPulse 1.15s ease-out infinite;
+      pointer-events: none;
+    }
+
+    .pulse-ring-mint {
+      stroke: var(--mint-stroke);
+    }
+
+    @keyframes ringPulse {
+      0% {
+        transform: scale(0.7);
+        opacity: 0.95;
+      }
+      100% {
+        transform: scale(2.1);
+        opacity: 0;
+      }
+    }
+
+    .map-label-box {
+      pointer-events: none;
+      animation: labelPop 200ms cubic-bezier(0.16, 1, 0.3, 1);
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    @keyframes labelPop {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.92);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .map-label-bg {
+      fill: #FFFFFF;
+      stroke-width: 3;
+      filter: drop-shadow(0 6px 12px rgba(74, 68, 88, 0.14));
+    }
+
+    .map-label-bg.correct {
+      fill: #E9FDEE;
+      stroke: var(--mint-stroke);
+    }
+
+    .map-label-bg.wrong {
+      fill: #FFF0F5;
+      stroke: var(--pink-stroke);
+    }
+
+    .map-label-text {
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      fill: var(--text);
+      text-anchor: middle;
+      dominant-baseline: central;
+    }
+
+    /* Bottom Feedback Dock */
+    .feedback-bar {
+      min-height: 110px;
+      border-radius: 28px;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      box-shadow: var(--shadow-card);
+      padding: 16px 32px;
+      margin-right: 170px; /* Clear signature badge cleanly */
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      transition: background-color 200ms ease, border-color 200ms ease;
+    }
+
+    .feedback-bar.state-idle {
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .feedback-bar.state-correct {
+      background: #EAFDEF;
+      border-color: var(--mint-stroke);
+    }
+
+    .feedback-bar.state-close {
+      background: #FFF6DF;
+      border-color: #E2BE68;
+    }
+
+    .feedback-bar.state-wrong {
+      background: #FFF0F4;
+      border-color: var(--pink-stroke);
+    }
+
+    .feedback-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex: 1;
+    }
+
+    .feedback-icon {
+      width: 66px;
+      height: 66px;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      flex-shrink: 0;
+      background: var(--bg);
+    }
+
+    .state-correct .feedback-icon {
+      background: var(--mint);
+    }
+
+    .state-close .feedback-icon {
+      background: var(--peach);
+    }
+
+    .state-wrong .feedback-icon {
+      background: var(--pink);
+    }
+
+    .feedback-title {
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 30px;
+      color: var(--text);
+      line-height: 1.15;
+    }
+
+    .feedback-sub {
+      font-size: 21px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .btn-next {
+      min-width: 240px;
+      min-height: 80px;
+      padding: 0 36px;
+      border-radius: 24px;
+      background: var(--blue);
+      border: 3px solid #7EB9EE;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 30px;
+      font-weight: 700;
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .btn-next:hover:not(:disabled) {
+      background: #A6D4FD;
+    }
+
+    .btn-next.hidden {
+      display: none;
+    }
+
+    /* ---------------- END SCREEN ---------------- */
+    #screen-end {
+      align-items: center;
+      justify-content: center;
+    }
+
+    .end-card {
+      width: 1440px;
+      background: rgba(255, 255, 255, 0.94);
+      border: 2px solid rgba(74, 68, 88, 0.1);
+      border-radius: 40px;
+      box-shadow: var(--shadow-soft);
+      padding: 46px 56px;
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+    }
+
+    .end-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 32px;
+    }
+
+    .end-hero {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .end-medal {
+      width: 118px;
+      height: 118px;
+      border-radius: 34px;
+      background: var(--yellow);
+      border: 3px solid #ECD672;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .end-title {
+      font-size: 56px;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .end-subtitle {
+      font-size: 26px;
+      color: var(--muted);
+    }
+
+    .end-score-box {
+      background: var(--bg);
+      border-radius: 28px;
+      padding: 20px 36px;
+      text-align: right;
+      border: 2px solid var(--border);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .end-score-num {
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 54px;
+      line-height: 1;
+      color: var(--mint-deep);
+    }
+
+    .end-score-label {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px 24px;
+    }
+
+    .result-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 22px;
+      border-radius: 24px;
+      background: var(--bg);
+      border: 2px solid transparent;
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .result-row.res-correct {
+      background: #EAFDEF;
+      border-color: #B4EAC0;
+    }
+
+    .result-row.res-close {
+      background: #FFF6DF;
+      border-color: #F2D794;
+    }
+
+    .result-row.res-wrong {
+      background: #FFF0F4;
+      border-color: #F5C3D4;
+    }
+
+    .result-name {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .result-cat {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .result-pts {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .end-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 8px;
+    }
+
+    .end-note {
+      font-size: 22px;
+      color: var(--muted);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="viewport">
+    <main id="stage" aria-label="Slepá mapa Slovenska">
+      <!-- Sound Toggle (Top-Right) -->
+      <button id="mute-btn" type="button" aria-label="Vypnúť alebo zapnúť zvuk" aria-pressed="false" title="Zvuk">
+        <span id="mute-icon">🔊</span>
+      </button>
+
+      <!-- Signature Badge (Bottom-Right, always visible) -->
+      <div class="signature-badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="#E9B949" stroke="#C59326" stroke-width="1.5">
+          <path d="M12 2.5l2.85 5.78 6.38.93-4.61 4.5 1.09 6.35L12 17.06l-5.71 3 1.09-6.35-4.61-4.5 6.38-.93z"/>
+        </svg>
+        <span>by schwarz</span>
+      </div>
+
+      <!-- SCREEN 1: START -->
+      <section id="screen-start" class="screen active" aria-labelledby="title-start">
+        <div class="start-card">
+          <div>
+            <div class="start-meta">Vlastiveda · 4. ročník ZŠ · 10 otázok</div>
+            <h1 id="title-start" class="start-title">Slepá mapa Slovenska</h1>
+            <p class="start-desc">
+              Vyskúšaj si, ako dobre poznáš našu krajinu! V každej úlohe klikni na mape Slovenska
+              na hľadané mesto, rieku, pohorie alebo nížinu.
+            </p>
+
+            <div class="legend-grid" aria-label="Vysvetlivky k mape">
+              <div class="legend-item">
+                <span class="legend-swatch" style="background: var(--yellow); border: 2px solid #D8C15B;">
+                  <svg width="18" height="18" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6" fill="#fff" stroke="#4A4458" stroke-width="3"/></svg>
+                </span>
+                <span>Mestá</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-swatch" style="background: var(--blue);">
+                  <svg width="22" height="18" viewBox="0 0 24 18"><path d="M2 13 C8 4, 15 14, 22 5" fill="none" stroke="#2D6F9E" stroke-width="3.5" stroke-linecap="round"/></svg>
+                </span>
+                <span>Rieky</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-swatch" style="background: var(--lilac);">
+                  <svg width="22" height="18" viewBox="0 0 24 18"><path d="M2 15 L9 4 L14 11 L17 7 L22 15 Z" fill="#fff" stroke="#4A4458" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                </span>
+                <span>Pohoria a nížina</span>
+              </div>
+            </div>
+
+            <button id="btn-start" type="button" class="btn-primary">
+              <span>Začať</span>
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
+
+          <div class="start-preview" aria-hidden="true">
+            <svg viewBox="60 60 1090 545" width="100%" height="auto">
+              <path d="M110,466 L83,408 L103,343 L110,326 L150,280 L197,294 L267,253 L308,225 L370,138 L452,100 L559,75 L591,124 L622,176 L670,190 L681,163 L730,130 L784,127 L820,157 L888,119 L960,127 L1041,171 L1115,215 L1086,269 L1063,332 L1041,373 L1030,400 L955,403 L879,367 L739,381 L704,425 L623,466 L533,490 L465,496 L424,567 L344,586 L317,578 L231,567 L213,548 L143,509 L127,477 Z"
+                fill="#FFFDF8" stroke="#A79FB8" stroke-width="6" stroke-linejoin="round" />
+              <path d="M144,468 C178,426 235,396 310,390 C362,386 402,424 414,475 C421,510 422,542 418,564 C370,582 325,576 238,560 C186,542 152,506 144,468 Z"
+                fill="#E8F6C8" stroke="#C2DC8E" stroke-width="3" stroke-dasharray="9 6" />
+              <ellipse cx="660" cy="200" rx="46" ry="23" fill="#E3D7FA" stroke="#B79FE6" stroke-width="3" />
+              <ellipse cx="590" cy="254" rx="84" ry="22" fill="#FFE4C4" stroke="#E9BA82" stroke-width="3" />
+              <path d="M110,466 L133,474 L146,508 L213,548 L234,565 L317,578 L344,586 L424,567 L442,566" fill="none" stroke="#74BDF7" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M616,234 L584,217 L528,217 L460,209 L427,179 L395,179 L375,206 L301,269 L263,307 L263,351 L258,395 L245,433 L271,471 L292,534 L317,576" fill="none" stroke="#74BDF7" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M688,280 L645,277 L589,294 L569,291 L500,311 L496,356 L447,351 L424,381 L409,397 L389,433 L413,498 L424,565" fill="none" stroke="#74BDF7" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="133" cy="472" r="10" fill="#fff" stroke="#4A4458" stroke-width="4" />
+              <circle cx="427" cy="179" r="10" fill="#fff" stroke="#4A4458" stroke-width="4" />
+              <circle cx="500" cy="311" r="10" fill="#fff" stroke="#4A4458" stroke-width="4" />
+              <circle cx="881" cy="317" r="10" fill="#fff" stroke="#4A4458" stroke-width="4" />
+            </svg>
+            <div class="start-preview-caption">Interaktívna slepá mapa bez popisov</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCREEN 2: GAMEPLAY -->
+      <section id="screen-game" class="screen" aria-label="Hra Slepá mapa Slovenska">
+        <header class="game-hud">
+          <div class="prompt-panel">
+            <div class="prompt-text-wrap">
+              <div id="prompt-kicker" class="prompt-kicker">Mesto · Úloha 1 z 10</div>
+              <div id="prompt-main" class="prompt-main">Klikni na hlavné mesto Slovenska – Bratislava</div>
+            </div>
+            <div id="category-icon" class="category-hint-icon" aria-hidden="true">🏙️</div>
+          </div>
+
+          <div class="status-panel">
+            <div class="status-row">
+              <span id="progress-label">Otázka 1 / 10</span>
+              <span id="score-label" class="score-value">Skóre: 0 b.</span>
+            </div>
+            <div class="progress-track" aria-hidden="true">
+              <div id="progress-fill" class="progress-fill"></div>
+            </div>
+          </div>
+        </header>
+
+        <div class="map-card">
+          <svg id="slovakia-map" viewBox="0 0 1200 620" role="img" aria-label="Interaktívna slepá mapa Slovenska">
+            <defs>
+              <pattern id="lowland-dots" width="18" height="18" patternUnits="userSpaceOnUse">
+                <circle cx="6" cy="6" r="1.4" fill="#B5D37B" opacity="0.55" />
+                <circle cx="15" cy="14" r="1.2" fill="#B5D37B" opacity="0.4" />
+              </pattern>
+            </defs>
+
+            <!-- Gentle Compass Rose (Slovak directions S / J / V / Z) -->
+            <g transform="translate(82, 130)" opacity="0.68" aria-hidden="true">
+              <circle cx="0" cy="0" r="34" fill="#FFFDF8" stroke="#C5BED2" stroke-width="2" />
+              <polygon points="0,-24 6,-6 0,-10 -6,-6" fill="#74BDF7" />
+              <polygon points="0,24 6,6 0,10 -6,6" fill="#D7C6F5" />
+              <polygon points="-24,0 -6,-6 -10,0 -6,6" fill="#D7C6F5" />
+              <polygon points="24,0 6,-6 10,0 6,6" fill="#D7C6F5" />
+              <text x="0" y="-40" text-anchor="middle" font-family="Baloo 2, sans-serif" font-size="16" font-weight="700" fill="#766E85">S</text>
+              <text x="0" y="51" text-anchor="middle" font-family="Baloo 2, sans-serif" font-size="15" font-weight="700" fill="#766E85">J</text>
+              <text x="-45" y="5" text-anchor="middle" font-family="Baloo 2, sans-serif" font-size="15" font-weight="700" fill="#766E85">Z</text>
+              <text x="45" y="5" text-anchor="middle" font-family="Baloo 2, sans-serif" font-size="15" font-weight="700" fill="#766E85">V</text>
+            </g>
+
+            <!-- Soft backdrop offset under Slovakia -->
+            <path class="map-border-shadow" transform="translate(8, 10)"
+              d="M110,466 L83,408 L103,343 L110,326 L150,280 L197,294 L267,253 L308,225 L370,138 L452,100 L559,75 L591,124 L622,176 L670,190 L681,163 L730,130 L784,127 L820,157 L888,119 L960,127 L1041,171 L1115,215 L1086,269 L1063,332 L1041,373 L1030,400 L955,403 L879,367 L739,381 L704,425 L623,466 L533,490 L465,496 L424,567 L344,586 L317,578 L231,567 L213,548 L143,509 L127,477 Z" />
+
+            <!-- Main Slovakia Country Outline -->
+            <path id="slovakia-outline" class="map-border"
+              d="M110,466 L83,408 L103,343 L110,326 L150,280 L197,294 L267,253 L308,225 L370,138 L452,100 L559,75 L591,124 L622,176 L670,190 L681,163 L730,130 L784,127 L820,157 L888,119 L960,127 L1041,171 L1115,215 L1086,269 L1063,332 L1041,373 L1030,400 L955,403 L879,367 L739,381 L704,425 L623,466 L533,490 L465,496 L424,567 L344,586 L317,578 L231,567 L213,548 L143,509 L127,477 Z" />
+
+            <!-- Secondary Decorative Relief Zones (non-target, subtle for realistic geography) -->
+            <g aria-hidden="true">
+              <!-- Záhorská nížina -->
+              <path class="zone-secondary" d="M104,352 C125,340 150,352 152,385 C154,418 134,442 114,446 C98,426 94,380 104,352 Z" />
+              <!-- Východoslovenská nížina -->
+              <path class="zone-secondary" d="M940,326 C975,304 1030,312 1054,344 C1065,365 1038,394 975,394 C940,388 920,350 940,326 Z" />
+              <!-- Malé Karpaty -->
+              <ellipse class="zone-secondary" cx="164" cy="408" rx="18" ry="44" transform="rotate(24 164 408)" />
+              <!-- Slovenské rudohorie -->
+              <ellipse class="zone-secondary" cx="690" cy="340" rx="92" ry="30" transform="rotate(-10 690 340)" />
+            </g>
+
+            <!-- TARGET ZONE: Podunajská nížina -->
+            <g id="target-podunajska-nizina" data-id="podunajska-nizina">
+              <path id="shape-podunajska-nizina" class="zone-target zone-lowland"
+                d="M144,468 C178,426 235,396 310,390 C362,386 402,424 414,475 C421,510 422,542 418,564 C370,582 325,576 238,560 C186,542 152,506 144,468 Z" />
+              <path d="M144,468 C178,426 235,396 310,390 C362,386 402,424 414,475 C421,510 422,542 418,564 C370,582 325,576 238,560 C186,542 152,506 144,468 Z"
+                fill="url(#lowland-dots)" pointer-events="none" />
+            </g>
+
+            <!-- TARGET ZONE: Nízke Tatry -->
+            <g id="target-nizke-tatry" data-id="nizke-tatry">
+              <path id="shape-nizke-tatry" class="zone-target zone-low-tatras"
+                d="M506,252 C518,233 565,228 612,232 C655,236 686,246 684,264 C680,280 638,282 590,280 C540,278 498,270 506,252 Z" />
+              <!-- Stylized gentle hills -->
+              <path class="mountain-peak" d="M532,268 L548,244 L564,268 Z" />
+              <path class="mountain-peak" d="M562,270 L584,238 L606,270 Z" />
+              <path class="mountain-peak" d="M604,270 L624,242 L644,270 Z" />
+              <path class="mountain-peak" d="M642,270 L658,248 L674,270 Z" />
+            </g>
+
+            <!-- TARGET ZONE: Vysoké Tatry -->
+            <g id="target-vysoke-tatry" data-id="vysoke-tatry">
+              <path id="shape-vysoke-tatry" class="zone-target zone-high-tatras"
+                d="M615,204 C612,184 636,174 664,176 C692,178 708,192 704,208 C699,224 674,226 650,224 C626,222 618,218 615,204 Z" />
+              <!-- Stylized sharp alpine peaks -->
+              <path class="mountain-peak" d="M624,214 L640,183 L656,214 Z" />
+              <path class="mountain-peak" d="M646,214 L665,176 L684,214 Z" />
+              <path class="mountain-peak" d="M672,214 L687,186 L700,214 Z" />
+            </g>
+
+            <!-- Secondary decorative river: Hornád (eastern Slovakia) -->
+            <path class="river-secondary" d="M686,239 L755,255 L812,261 L874,280 L881,317 L884,367" />
+
+            <!-- TARGET RIVER: Váh -->
+            <g id="target-vah" class="river-group" data-id="vah">
+              <path id="shape-vah" class="river-line"
+                d="M616,234 L584,217 L528,217 L460,209 L427,179 L395,179 L375,206 L301,269 L263,307 L263,351 L258,395 L245,433 L271,471 L292,534 L317,576" />
+              <path class="river-hit"
+                d="M616,234 L584,217 L528,217 L460,209 L427,179 L395,179 L375,206 L301,269 L263,307 L263,351 L258,395 L245,433 L271,471 L292,534 L317,576" />
+            </g>
+
+            <!-- TARGET RIVER: Hron -->
+            <g id="target-hron" class="river-group" data-id="hron">
+              <path id="shape-hron" class="river-line"
+                d="M688,280 L645,277 L589,294 L569,291 L500,311 L496,356 L447,351 L424,381 L409,397 L389,433 L413,498 L424,565" />
+              <path class="river-hit"
+                d="M688,280 L645,277 L589,294 L569,291 L500,311 L496,356 L447,351 L424,381 L409,397 L389,433 L413,498 L424,565" />
+            </g>
+
+            <!-- TARGET RIVER: Dunaj -->
+            <g id="target-dunaj" class="river-group" data-id="dunaj">
+              <path id="shape-dunaj" class="river-line"
+                d="M110,466 L133,474 L146,508 L213,548 L234,565 L317,578 L344,586 L424,567 L442,566" />
+              <path class="river-hit"
+                d="M110,466 L133,474 L146,508 L213,548 L234,565 L317,578 L344,586 L424,567 L442,566" />
+            </g>
+
+            <!-- Non-target regional cities (for authentic blind-map challenge) -->
+            <g class="city-group" aria-hidden="true">
+              <circle class="city-dot" cx="301" cy="269" r="8.5" />
+              <circle class="city-hit" cx="301" cy="269" r="22" />
+            </g>
+            <g class="city-group" aria-hidden="true">
+              <circle class="city-dot" cx="298" cy="434" r="8.5" />
+              <circle class="city-hit" cx="298" cy="434" r="22" />
+            </g>
+            <g class="city-group" aria-hidden="true">
+              <circle class="city-dot" cx="877" cy="250" r="8.5" />
+              <circle class="city-hit" cx="877" cy="250" r="22" />
+            </g>
+            <g class="city-group" aria-hidden="true">
+              <circle class="city-dot" cx="688" cy="225" r="8.5" />
+              <circle class="city-hit" cx="688" cy="225" r="22" />
+            </g>
+
+            <!-- TARGET CITIES -->
+            <g id="target-bratislava" class="city-group" data-id="bratislava">
+              <circle class="city-dot" cx="133" cy="472" r="10.5" />
+              <circle class="city-hit" cx="133" cy="472" r="28" />
+            </g>
+            <g id="target-zilina" class="city-group" data-id="zilina">
+              <circle class="city-dot" cx="427" cy="179" r="10.5" />
+              <circle class="city-hit" cx="427" cy="179" r="28" />
+            </g>
+            <g id="target-banska-bystrica" class="city-group" data-id="banska-bystrica">
+              <circle class="city-dot" cx="500" cy="311" r="10.5" />
+              <circle class="city-hit" cx="500" cy="311" r="28" />
+            </g>
+            <g id="target-kosice" class="city-group" data-id="kosice">
+              <circle class="city-dot" cx="881" cy="317" r="10.5" />
+              <circle class="city-hit" cx="881" cy="317" r="28" />
+            </g>
+
+            <!-- Dynamic Feedback Layer (pins, dashed connector, pulsing rings, labels) -->
+            <g id="feedback-layer"></g>
+          </svg>
+        </div>
+
+        <footer id="feedback-bar" class="feedback-bar state-idle" aria-live="polite">
+          <div class="feedback-left">
+            <div id="feedback-icon" class="feedback-icon" aria-hidden="true">🗺️</div>
+            <div>
+              <div id="feedback-title" class="feedback-title">Klikni priamo na miesto na mape</div>
+              <div id="feedback-sub" class="feedback-sub">Presný zásah = 10 bodov · Tesne vedľa = 5 bodov</div>
+            </div>
+          </div>
+          <button id="btn-next" type="button" class="btn-next hidden">
+            <span>Ďalej</span>
+            <span aria-hidden="true">→</span>
+          </button>
+        </footer>
+      </section>
+
+      <!-- SCREEN 3: END -->
+      <section id="screen-end" class="screen" aria-labelledby="end-title">
+        <div class="end-card">
+          <div class="end-header">
+            <div class="end-hero">
+              <div class="end-medal" aria-hidden="true">
+                <svg width="68" height="68" viewBox="0 0 64 64">
+                  <path d="M32 6l7.6 15.4 17 2.5-12.3 12 2.9 16.9L32 44.8l-15.2 8 2.9-16.9-12.3-12 17-2.5z"
+                    fill="#FFD166" stroke="#C69122" stroke-width="3" stroke-linejoin="round" />
+                </svg>
+              </div>
+              <div>
+                <h2 id="end-title" class="end-title">Skvelá práca!</h2>
+                <p id="end-subtitle" class="end-subtitle">Mapu Slovenska ovládaš na jednotku.</p>
+              </div>
+            </div>
+
+            <div class="end-score-box">
+              <div id="end-score-num" class="end-score-num">90 / 100 b.</div>
+              <div id="end-score-detail" class="end-score-label">9 z 10 presných zásahov</div>
+            </div>
+          </div>
+
+          <div id="results-grid" class="results-grid" aria-label="Prehľad odpovedí"></div>
+
+          <div class="end-actions">
+            <div class="end-note">Otázky sa pri každom novom spustení premiešajú.</div>
+            <button id="btn-restart" type="button" class="btn-primary">
+              <span>Hrať znova</span>
+              <span aria-hidden="true">↻</span>
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    /* =====================================================================
+       DATABÁZA OTÁZOK – ľahko upraviteľné pole pre učiteľov
+       ===================================================================== */
+    const QUESTIONS = [
+      {
+        id: 'bratislava',
+        name: 'Bratislava',
+        category: 'Mesto',
+        icon: '🏙️',
+        prompt: 'Klikni na hlavné mesto Slovenska – Bratislava',
+        hint: 'Bratislava leží na západe Slovenska pri rieke Dunaj.',
+        type: 'point',
+        x: 133,
+        y: 472,
+        tolerance: 42,
+        closeTolerance: 85
+      },
+      {
+        id: 'kosice',
+        name: 'Košice',
+        category: 'Mesto',
+        icon: '🏙️',
+        prompt: 'Nájdi najväčšie mesto východného Slovenska – Košice',
+        hint: 'Košice sú metropolou východného Slovenska v Košickej kotline.',
+        type: 'point',
+        x: 881,
+        y: 317,
+        tolerance: 42,
+        closeTolerance: 85
+      },
+      {
+        id: 'banska-bystrica',
+        name: 'Banská Bystrica',
+        category: 'Mesto',
+        icon: '🏙️',
+        prompt: 'Klikni na krajské mesto v strede Slovenska – Banská Bystrica',
+        hint: 'Banská Bystrica leží na strednom Pohroní pod Nízkymi Tatrami.',
+        type: 'point',
+        x: 500,
+        y: 311,
+        tolerance: 42,
+        closeTolerance: 85
+      },
+      {
+        id: 'zilina',
+        name: 'Žilina',
+        category: 'Mesto',
+        icon: '🏙️',
+        prompt: 'Nájdi krajské mesto na severe Slovenska – Žilina',
+        hint: 'Žilina leží na sútoku riek Váh, Kysuca a Rajčanka.',
+        type: 'point',
+        x: 427,
+        y: 179,
+        tolerance: 42,
+        closeTolerance: 85
+      },
+      {
+        id: 'vysoke-tatry',
+        name: 'Vysoké Tatry',
+        category: 'Pohorie',
+        icon: '⛰️',
+        prompt: 'Nájdi naše najvyššie pohorie – Vysoké Tatry',
+        hint: 'Vo Vysokých Tatrách sa týči najvyšší vrch Slovenska – Gerlachovský štít.',
+        type: 'zone',
+        x: 660,
+        y: 200,
+        polygon: [
+          [615, 204], [620, 184], [645, 174], [676, 176],
+          [702, 190], [704, 208], [685, 224], [644, 224], [620, 218]
+        ],
+        tolerance: 30,
+        closeTolerance: 72
+      },
+      {
+        id: 'nizke-tatry',
+        name: 'Nízke Tatry',
+        category: 'Pohorie',
+        icon: '⛰️',
+        prompt: 'Klikni na pohorie južne od Vysokých Tatier – Nízke Tatry',
+        hint: 'Nízke Tatry sa tiahnu od západu na východ medzi Váhom a Hronom.',
+        type: 'zone',
+        x: 594,
+        y: 256,
+        polygon: [
+          [506, 252], [528, 234], [584, 229], [645, 234],
+          [684, 248], [682, 268], [638, 281], [566, 280], [512, 272]
+        ],
+        tolerance: 28,
+        closeTolerance: 70
+      },
+      {
+        id: 'podunajska-nizina',
+        name: 'Podunajská nížina',
+        category: 'Nížina',
+        icon: '🌾',
+        prompt: 'Nájdi našu najúrodnejšiu nížinu na juhozápade – Podunajská nížina',
+        hint: 'Podunajská nížina sa rozprestiera medzi Bratislavou, Nitrou a Komárnom.',
+        type: 'zone',
+        x: 286,
+        y: 486,
+        polygon: [
+          [144, 468], [184, 422], [248, 396], [312, 390],
+          [372, 408], [412, 468], [420, 526], [416, 564],
+          [344, 580], [238, 560], [176, 526]
+        ],
+        tolerance: 26,
+        closeTolerance: 68
+      },
+      {
+        id: 'dunaj',
+        name: 'Dunaj',
+        category: 'Rieka',
+        icon: '🌊',
+        prompt: 'Klikni na európsku veľrieku na južnej hranici – Dunaj',
+        hint: 'Dunaj preteká Bratislavou a tvorí časť našej južnej hranice.',
+        type: 'line',
+        x: 278,
+        y: 562,
+        points: [
+          [110, 466], [133, 474], [146, 508], [213, 548],
+          [234, 565], [317, 578], [344, 586], [424, 567], [442, 566]
+        ],
+        tolerance: 34,
+        closeTolerance: 74
+      },
+      {
+        id: 'vah',
+        name: 'Váh',
+        category: 'Rieka',
+        icon: '🌊',
+        prompt: 'Klikni na najdlhšiu rieku Slovenska – Váh',
+        hint: 'Váh preteká severným a západným Slovenskom a vlieva sa do Dunaja pri Komárne.',
+        type: 'line',
+        x: 286,
+        y: 292,
+        points: [
+          [616, 234], [584, 217], [528, 217], [460, 209], [427, 179],
+          [395, 179], [375, 206], [301, 269], [263, 307], [263, 351],
+          [258, 395], [245, 433], [271, 471], [292, 534], [317, 576]
+        ],
+        tolerance: 32,
+        closeTolerance: 72
+      },
+      {
+        id: 'hron',
+        name: 'Hron',
+        category: 'Rieka',
+        icon: '🌊',
+        prompt: 'Nájdi rieku stredného Slovenska, ktorá preteká Banskou Bystricou – Hron',
+        hint: 'Hron pramení pod Kráľovou hoľou a vlieva sa do Dunaja pri Štúrove.',
+        type: 'line',
+        x: 455,
+        y: 365,
+        points: [
+          [688, 280], [645, 277], [589, 294], [569, 291], [500, 311],
+          [496, 356], [447, 351], [424, 381], [409, 397], [389, 433],
+          [413, 498], [424, 565]
+        ],
+        tolerance: 32,
+        closeTolerance: 72
+      }
+    ];
+
+    /* =====================================================================
+       SCALING STAGE (1890 x 1063 -> FIT ANY WINDOW)
+       ===================================================================== */
+    const STAGE_W = 1890;
+    const STAGE_H = 1063;
+    const stageEl = document.getElementById('stage');
+
+    function fitStage() {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const scale = Math.min(vw / STAGE_W, vh / STAGE_H);
+      stageEl.style.transform = `scale(${scale})`;
+    }
+
+    window.addEventListener('resize', fitStage);
+    window.addEventListener('DOMContentLoaded', fitStage);
+    fitStage();
+
+    /* =====================================================================
+       WEB AUDIO API SOUND ENGINE
+       ===================================================================== */
+    let audioCtx = null;
+    let isMuted = false;
+
+    function ensureAudio() {
+      if (!audioCtx) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (Ctx) {
+          audioCtx = new Ctx();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playTone(freq, startTime, duration, type = 'sine', peakGain = 0.16, endFreq = null) {
+      if (!audioCtx || isMuted) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, startTime);
+      if (endFreq !== null) {
+        osc.frequency.exponentialRampToValueAtTime(endFreq, startTime + duration);
+      }
+
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.exponentialRampToValueAtTime(peakGain, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + duration + 0.02);
+    }
+
+    function playCorrectSound() {
+      ensureAudio();
+      if (!audioCtx || isMuted) return;
+      const now = audioCtx.currentTime;
+      playTone(523.25, now, 0.16, 'triangle', 0.18);        // C5
+      playTone(659.25, now + 0.11, 0.24, 'triangle', 0.2);  // E5
+    }
+
+    function playWrongSound() {
+      ensureAudio();
+      if (!audioCtx || isMuted) return;
+      const now = audioCtx.currentTime;
+      playTone(230, now, 0.22, 'sine', 0.16, 165); // Soft gentle low bonk
+    }
+
+    function playFinishSound() {
+      ensureAudio();
+      if (!audioCtx || isMuted) return;
+      const now = audioCtx.currentTime;
+      playTone(523.25, now, 0.16, 'triangle', 0.16);        // C5
+      playTone(659.25, now + 0.12, 0.16, 'triangle', 0.16); // E5
+      playTone(783.99, now + 0.24, 0.18, 'triangle', 0.18); // G5
+      playTone(1046.5, now + 0.36, 0.38, 'triangle', 0.2);  // C6
+    }
+
+    /* =====================================================================
+       GEOMETRY HELPERS FOR SVG MAP HIT TESTING
+       ===================================================================== */
+    const svgMap = document.getElementById('slovakia-map');
+    const feedbackLayer = document.getElementById('feedback-layer');
+
+    function clientToSvg(clientX, clientY) {
+      const pt = svgMap.createSVGPoint();
+      pt.x = clientX;
+      pt.y = clientY;
+      const ctm = svgMap.getScreenCTM();
+      if (!ctm) return { x: 600, y: 310 };
+      const transformed = pt.matrixTransform(ctm.inverse());
+      return { x: transformed.x, y: transformed.y };
+    }
+
+    function distPointToSegment(px, py, ax, ay, bx, by) {
+      const dx = bx - ax;
+      const dy = by - ay;
+      const lenSq = dx * dx + dy * dy;
+      if (lenSq === 0) {
+        return { dist: Math.hypot(px - ax, py - ay), x: ax, y: ay };
+      }
+      let t = ((px - ax) * dx + (py - ay) * dy) / lenSq;
+      t = Math.max(0, Math.min(1, t));
+      const cx = ax + t * dx;
+      const cy = ay + t * dy;
+      return { dist: Math.hypot(px - cx, py - cy), x: cx, y: cy };
+    }
+
+    function distToPolyline(px, py, points) {
+      let best = { dist: Infinity, x: points[0][0], y: points[0][1] };
+      for (let i = 0; i < points.length - 1; i++) {
+        const res = distPointToSegment(
+          px, py,
+          points[i][0], points[i][1],
+          points[i + 1][0], points[i + 1][1]
+        );
+        if (res.dist < best.dist) best = res;
+      }
+      return best;
+    }
+
+    function pointInPolygon(px, py, polygon) {
+      let inside = false;
+      for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i][0], yi = polygon[i][1];
+        const xj = polygon[j][0], yj = polygon[j][1];
+        const intersect = ((yi > py) !== (yj > py)) &&
+          (px < (xj - xi) * (py - yi) / ((yj - yi) || 0.00001) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+
+    function distToPolygon(px, py, polygon) {
+      if (pointInPolygon(px, py, polygon)) {
+        return { dist: 0, x: px, y: py, inside: true };
+      }
+      let best = { dist: Infinity, x: polygon[0][0], y: polygon[0][1], inside: false };
+      for (let i = 0; i < polygon.length; i++) {
+        const next = (i + 1) % polygon.length;
+        const res = distPointToSegment(
+          px, py,
+          polygon[i][0], polygon[i][1],
+          polygon[next][0], polygon[next][1]
+        );
+        if (res.dist < best.dist) {
+          best = { dist: res.dist, x: res.x, y: res.y, inside: false };
+        }
+      }
+      return best;
+    }
+
+    function evaluateClick(question, clickX, clickY) {
+      if (question.type === 'point') {
+        const d = Math.hypot(clickX - question.x, clickY - question.y);
+        return {
+          dist: d,
+          anchorX: question.x,
+          anchorY: question.y,
+          labelX: question.x,
+          labelY: question.y
+        };
+      }
+      if (question.type === 'line') {
+        const res = distToPolyline(clickX, clickY, question.points);
+        return {
+          dist: res.dist,
+          anchorX: res.x,
+          anchorY: res.y,
+          labelX: res.dist <= question.tolerance ? clickX : question.x,
+          labelY: res.dist <= question.tolerance ? clickY : question.y
+        };
+      }
+      const res = distToPolygon(clickX, clickY, question.polygon);
+      return {
+        dist: res.dist,
+        anchorX: res.inside ? clickX : question.x,
+        anchorY: res.inside ? clickY : question.y,
+        labelX: question.x,
+        labelY: question.y
+      };
+    }
+
+    /* =====================================================================
+       GAME STATE & UI CONTROLLERS
+       ===================================================================== */
+    const screens = {
+      start: document.getElementById('screen-start'),
+      game: document.getElementById('screen-game'),
+      end: document.getElementById('screen-end')
+    };
+
+    const muteBtn = document.getElementById('mute-btn');
+    const muteIcon = document.getElementById('mute-icon');
+    const btnStart = document.getElementById('btn-start');
+    const btnNext = document.getElementById('btn-next');
+    const btnRestart = document.getElementById('btn-restart');
+
+    const promptKicker = document.getElementById('prompt-kicker');
+    const promptMain = document.getElementById('prompt-main');
+    const categoryIcon = document.getElementById('category-icon');
+    const progressLabel = document.getElementById('progress-label');
+    const scoreLabel = document.getElementById('score-label');
+    const progressFill = document.getElementById('progress-fill');
+
+    const feedbackBar = document.getElementById('feedback-bar');
+    const feedbackIcon = document.getElementById('feedback-icon');
+    const feedbackTitle = document.getElementById('feedback-title');
+    const feedbackSub = document.getElementById('feedback-sub');
+
+    const endTitle = document.getElementById('end-title');
+    const endSubtitle = document.getElementById('end-subtitle');
+    const endScoreNum = document.getElementById('end-score-num');
+    const endScoreDetail = document.getElementById('end-score-detail');
+    const resultsGrid = document.getElementById('results-grid');
+
+    let deck = [];
+    let currentIndex = 0;
+    let score = 0;
+    let results = [];
+    let awaitingNext = false;
+    let autoAdvanceTimer = null;
+
+    function shuffleArray(list) {
+      const copy = [...list];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function showScreen(name) {
+      Object.keys(screens).forEach((key) => {
+        screens[key].classList.toggle('active', key === name);
+      });
+    }
+
+    function clearMapFeedback(clearFound = false) {
+      feedbackLayer.innerHTML = '';
+      QUESTIONS.forEach((q) => {
+        const group = document.getElementById(`target-${q.id}`);
+        const shape = document.getElementById(`shape-${q.id}`);
+        if (group) {
+          group.classList.remove('is-correct-river', 'is-reveal-river', 'is-correct-city', 'is-reveal-city');
+          if (clearFound) group.classList.remove('is-found-city');
+        }
+        if (shape) {
+          shape.classList.remove('is-correct-zone', 'is-reveal-zone');
+        }
+      });
+    }
+
+    function svgEl(tag, attrs) {
+      const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+      Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, String(v)));
+      return el;
+    }
+
+    function addMapLabel(x, y, text, isCorrect) {
+      const clampedX = Math.max(120, Math.min(1080, x));
+      const clampedY = Math.max(55, Math.min(570, y - 34));
+      const boxWidth = Math.max(138, text.length * 14.5 + 34);
+
+      const g = svgEl('g', { class: 'map-label-box', transform: `translate(${clampedX}, ${clampedY})` });
+      const rect = svgEl('rect', {
+        x: -boxWidth / 2,
+        y: -22,
+        width: boxWidth,
+        height: 44,
+        rx: 18,
+        class: `map-label-bg ${isCorrect ? 'correct' : 'wrong'}`
+      });
+      const label = svgEl('text', { x: 0, y: 1, class: 'map-label-text' });
+      label.textContent = text;
+      g.appendChild(rect);
+      g.appendChild(label);
+      feedbackLayer.appendChild(g);
+    }
+
+    function highlightTarget(question, isCorrect) {
+      const group = document.getElementById(`target-${question.id}`);
+      const shape = document.getElementById(`shape-${question.id}`);
+
+      if (question.type === 'zone' && shape) {
+        shape.classList.add(isCorrect ? 'is-correct-zone' : 'is-reveal-zone');
+      } else if (question.type === 'line' && group) {
+        group.classList.add(isCorrect ? 'is-correct-river' : 'is-reveal-river');
+      } else if (question.type === 'point' && group) {
+        group.classList.add(isCorrect ? 'is-correct-city' : 'is-reveal-city');
+        if (isCorrect) group.classList.add('is-found-city');
+      }
+    }
+
+    function renderQuestion() {
+      if (autoAdvanceTimer) {
+        clearTimeout(autoAdvanceTimer);
+        autoAdvanceTimer = null;
+      }
+      awaitingNext = false;
+      clearMapFeedback(false);
+
+      const q = deck[currentIndex];
+      const num = currentIndex + 1;
+
+      promptKicker.textContent = `${q.category} · Úloha ${num} z ${deck.length}`;
+      promptMain.textContent = q.prompt;
+      categoryIcon.textContent = q.icon;
+
+      progressLabel.textContent = `Otázka ${num} / ${deck.length}`;
+      scoreLabel.textContent = `Skóre: ${score} b.`;
+      progressFill.style.width = `${(num / deck.length) * 100}%`;
+
+      feedbackBar.className = 'feedback-bar state-idle';
+      feedbackIcon.textContent = '🗺️';
+      feedbackTitle.textContent = 'Klikni priamo na miesto na mape';
+      feedbackSub.textContent = 'Presný zásah = 10 bodov · Tesne vedľa = 5 bodov';
+      btnNext.classList.add('hidden');
+    }
+
+    function handleMapClick(clientX, clientY) {
+      if (!screens.game.classList.contains('active') || awaitingNext) return;
+
+      ensureAudio();
+      const { x: clickX, y: clickY } = clientToSvg(clientX, clientY);
+      const q = deck[currentIndex];
+      const evalRes = evaluateClick(q, clickX, clickY);
+
+      awaitingNext = true;
+
+      if (evalRes.dist <= q.tolerance) {
+        // EXACT HIT (+10 points)
+        score += 10;
+        results.push({ question: q, status: 'correct', points: 10 });
+        playCorrectSound();
+        highlightTarget(q, true);
+
+        const pulse = svgEl('circle', {
+          cx: evalRes.anchorX,
+          cy: evalRes.anchorY,
+          r: 22,
+          class: 'pulse-ring pulse-ring-mint'
+        });
+        const pin = svgEl('circle', {
+          cx: evalRes.anchorX,
+          cy: evalRes.anchorY,
+          r: 8,
+          class: 'click-marker-correct'
+        });
+        feedbackLayer.appendChild(pulse);
+        feedbackLayer.appendChild(pin);
+        addMapLabel(evalRes.labelX, evalRes.labelY, `${q.name} ✓`, true);
+
+        scoreLabel.textContent = `Skóre: ${score} b.`;
+        feedbackBar.className = 'feedback-bar state-correct';
+        feedbackIcon.textContent = '🌟';
+        feedbackTitle.textContent = `Výborne! ${q.name} (+10 bodov)`;
+        feedbackSub.textContent = q.hint;
+
+        btnNext.querySelector('span').textContent = currentIndex === deck.length - 1 ? 'Zobraziť výsledok' : 'Ďalej';
+        btnNext.classList.remove('hidden');
+
+        // Smooth auto-advance on correct answers (still skippable via button)
+        autoAdvanceTimer = setTimeout(() => {
+          advanceQuestion();
+        }, 1850);
+      } else {
+        // CLOSE MISS (+5) or MISS (0)
+        const isClose = evalRes.dist <= q.closeTolerance;
+        const pts = isClose ? 5 : 0;
+        score += pts;
+        results.push({ question: q, status: isClose ? 'close' : 'wrong', points: pts });
+        playWrongSound();
+        highlightTarget(q, false);
+
+        // Dashed connector line from user's click to true target
+        const line = svgEl('line', {
+          x1: clickX,
+          y1: clickY,
+          x2: evalRes.anchorX,
+          y2: evalRes.anchorY,
+          class: 'connector-line'
+        });
+        const userDot = svgEl('circle', {
+          cx: clickX,
+          cy: clickY,
+          r: 8.5,
+          class: 'click-marker-wrong'
+        });
+        const targetPulse = svgEl('circle', {
+          cx: evalRes.anchorX,
+          cy: evalRes.anchorY,
+          r: 24,
+          class: 'pulse-ring'
+        });
+        const targetCore = svgEl('circle', {
+          cx: evalRes.anchorX,
+          cy: evalRes.anchorY,
+          r: 8,
+          class: 'click-marker-correct'
+        });
+
+        feedbackLayer.appendChild(line);
+        feedbackLayer.appendChild(userDot);
+        feedbackLayer.appendChild(targetPulse);
+        feedbackLayer.appendChild(targetCore);
+        addMapLabel(evalRes.anchorX, evalRes.anchorY, q.name, false);
+
+        scoreLabel.textContent = `Skóre: ${score} b.`;
+        feedbackBar.className = `feedback-bar ${isClose ? 'state-close' : 'state-wrong'}`;
+        feedbackIcon.textContent = isClose ? '🤏' : '📍';
+        feedbackTitle.textContent = isClose
+          ? `Tesne vedľa! Tu je ${q.name} (+5 bodov)`
+          : `Správna poloha je ${q.name} (0 bodov)`;
+        feedbackSub.textContent = q.hint;
+
+        btnNext.querySelector('span').textContent = currentIndex === deck.length - 1 ? 'Zobraziť výsledok' : 'Pokračovať';
+        btnNext.classList.remove('hidden');
+      }
+    }
+
+    function advanceQuestion() {
+      if (autoAdvanceTimer) {
+        clearTimeout(autoAdvanceTimer);
+        autoAdvanceTimer = null;
+      }
+      currentIndex += 1;
+      if (currentIndex >= deck.length) {
+        finishGame();
+      } else {
+        renderQuestion();
+      }
+    }
+
+    function finishGame() {
+      playFinishSound();
+      showScreen('end');
+
+      const maxScore = deck.length * 10;
+      const exactHits = results.filter((r) => r.status === 'correct').length;
+
+      endScoreNum.textContent = `${score} / ${maxScore} b.`;
+      endScoreDetail.textContent = `${exactHits} z ${deck.length} presných zásahov`;
+
+      if (score >= 85) {
+        endTitle.textContent = 'Výborne, si majster mapy!';
+        endSubtitle.textContent = 'Slovensko poznáš naozaj skvele. Pochvala za výborný výsledok!';
+      } else if (score >= 60) {
+        endTitle.textContent = 'Pekná práca!';
+        endSubtitle.textContent = 'Väčšinu miest, riek a pohorí už poznáš veľmi dobre.';
+      } else {
+        endTitle.textContent = 'Dobrý tréning!';
+        endSubtitle.textContent = 'Každým pokusom sa na mape zorientuješ ešte rýchlejšie. Skús to znova!';
+      }
+
+      resultsGrid.innerHTML = '';
+      results.forEach((entry) => {
+        const row = document.createElement('div');
+        const cls = entry.status === 'correct' ? 'res-correct' : entry.status === 'close' ? 'res-close' : 'res-wrong';
+        const icon = entry.status === 'correct' ? '✓' : entry.status === 'close' ? '~' : '○';
+        row.className = `result-row ${cls}`;
+
+        const left = document.createElement('div');
+        left.className = 'result-name';
+        left.innerHTML = `<span>${icon}</span><span>${entry.question.name}</span><span class="result-cat">· ${entry.question.category}</span>`;
+
+        const right = document.createElement('div');
+        right.className = 'result-pts';
+        right.textContent = `+${entry.points} b.`;
+
+        row.appendChild(left);
+        row.appendChild(right);
+        resultsGrid.appendChild(row);
+      });
+    }
+
+    function startNewGame() {
+      ensureAudio();
+      deck = shuffleArray(QUESTIONS);
+      currentIndex = 0;
+      score = 0;
+      results = [];
+      clearMapFeedback(true);
+      showScreen('game');
+      renderQuestion();
+    }
+
+    /* =====================================================================
+       EVENT LISTENERS (MOUSE, TOUCH, KEYBOARD)
+       ===================================================================== */
+    muteBtn.addEventListener('click', () => {
+      ensureAudio();
+      isMuted = !isMuted;
+      muteBtn.setAttribute('aria-pressed', String(isMuted));
+      muteIcon.textContent = isMuted ? '🔇' : '🔊';
+    });
+
+    btnStart.addEventListener('click', startNewGame);
+    btnRestart.addEventListener('click', startNewGame);
+    btnNext.addEventListener('click', advanceQuestion);
+
+    svgMap.addEventListener('pointerdown', (e) => {
+      if (e.button !== undefined && e.button !== 0 && e.pointerType === 'mouse') return;
+      handleMapClick(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        if (screens.start.classList.contains('active')) {
+          e.preventDefault();
+          startNewGame();
+        } else if (screens.game.classList.contains('active') && awaitingNext) {
+          e.preventDefault();
+          advanceQuestion();
+        } else if (screens.end.classList.contains('active')) {
+          e.preventDefault();
+          startNewGame();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
